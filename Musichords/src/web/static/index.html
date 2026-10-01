@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Musichords</title>
+  <link rel="stylesheet" href="estilo.css">
+</head>
+<body>
+  <header class="cabecalho">
+    <div>
+      <div class="logo">Musichords</div>
+      <div class="subtitulo">Modelagem de progressões harmônicas para guitarra via grafos de campos harmônicos</div>
+    </div>
+    <span class="selo-cabecalho">Teoria dos Grafos · Mackenzie</span>
+  </header>
+
+  <nav class="abas" role="tablist">
+    <button class="aba ativa" data-aba="fluxo">Fluxo do aplicativo</button>
+    <button class="aba" data-aba="grafo">Grafo de campos harmônicos</button>
+  </nav>
+
+  <!-- ===================================================== FLUXO (wireframe) -->
+  <main id="aba-fluxo" class="tela-fluxo">
+    <section class="moldura">
+      <div id="pontos" class="pontos"></div>
+      <div class="cartao-passo">
+        <div id="numero-passo" class="numero-passo"></div>
+        <h1 id="titulo-passo" class="titulo-passo"></h1>
+        <div id="conteudo" class="conteudo"></div>
+        <div class="barra">
+          <button id="voltar" class="botao tracejado">Voltar</button>
+          <button id="avancar" class="botao primario">Avançar</button>
+        </div>
+      </div>
+    </section>
+    <aside class="painel-lateral">
+      <div class="titulo-lateral">O QUE ESTÁ ACONTECENDO</div>
+      <div id="passo-lateral" class="passo-lateral"></div>
+      <p id="explicacao" class="explicacao"></p>
+      <ol id="lista-passos" class="lista-passos"></ol>
+      <hr>
+      <div class="titulo-lateral">SUA SESSÃO</div>
+      <div id="resumo" class="texto-suave"></div>
+    </aside>
+  </main>
+
+  <!-- ===================================================== GRAFO (menu a..i) -->
+  <main id="aba-grafo" class="tela-grafo oculto">
+    <section class="painel-operacoes">
+      <div class="cartao">
+        <div class="rotulo-secao">ARQUIVO</div>
+        <input id="g-caminho" type="text" placeholder="caminho do grafo.txt">
+        <div class="linha-botoes">
+          <button class="botao primario" data-op="ler">a) Ler</button>
+          <button class="botao secundario" data-op="gravar">b) Gravar</button>
+        </div>
+      </div>
+      <div class="cartao">
+        <div class="rotulo-secao">VÉRTICE</div>
+        <div class="campos"><input id="g-id" placeholder="ID"><input id="g-rotulo" placeholder="Rótulo (ex.: C_I)"></div>
+        <div class="linha-botoes">
+          <button class="botao primario" data-op="inserirVertice">c) Inserir</button>
+          <button class="botao perigo" data-op="removerVertice">e) Remover</button>
+        </div>
+      </div>
+      <div class="cartao">
+        <div class="rotulo-secao">ARESTA</div>
+        <div class="campos"><input id="g-origem" placeholder="Origem"><input id="g-destino" placeholder="Destino"><input id="g-peso" placeholder="Peso"></div>
+        <div class="linha-botoes">
+          <button class="botao primario" data-op="inserirAresta">d) Inserir</button>
+          <button class="botao perigo" data-op="removerAresta">f) Remover</button>
+        </div>
+      </div>
+      <div class="cartao">
+        <div class="rotulo-secao">CONSULTAS</div>
+        <button class="botao secundario largo" data-sub="arquivo">g) Conteúdo do arquivo</button>
+        <button class="botao secundario largo" data-sub="lista">h) Lista de adjacência</button>
+        <button class="botao secundario largo" data-sub="conexidade">i) Conexidade (FCONEX) e reduzido</button>
+      </div>
+      <div class="cartao">
+        <div class="rotulo-secao">CAMINHO MÍNIMO (DIJKSTRA)</div>
+        <div class="campos"><input id="g-d-origem" placeholder="Origem"><input id="g-d-destino" placeholder="Destino"></div>
+        <button id="g-dijkstra" class="botao primario largo">Calcular</button>
+        <div class="texto-suave">Dica: clique em um vértice no desenho para preencher a origem e, depois, em outro para o destino.</div>
+      </div>
+    </section>
+    <section class="centro-grafo">
+      <div id="contagem" class="contagem"></div>
+      <nav class="sub-abas">
+        <button class="sub-aba ativa" data-sub="visual">Visualização</button>
+        <button class="sub-aba" data-sub="lista">h) Adjacência</button>
+        <button class="sub-aba" data-sub="arquivo">g) Arquivo</button>
+        <button class="sub-aba" data-sub="conexidade">i) Conexidade</button>
+        <button class="sub-aba" data-sub="dijkstra">Dijkstra</button>
+      </nav>
+      <div id="sub-visual" class="sub-conteudo"><div id="svg-grafo" class="svg-grafo"></div></div>
+      <pre id="sub-lista" class="sub-conteudo texto-mono oculto"></pre>
+      <pre id="sub-arquivo" class="sub-conteudo texto-mono oculto"></pre>
+      <pre id="sub-conexidade" class="sub-conteudo texto-mono quebra oculto"></pre>
+      <pre id="sub-dijkstra" class="sub-conteudo texto-mono oculto">Informe origem e destino e clique em Calcular.</pre>
+      <div id="status" class="status"></div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
