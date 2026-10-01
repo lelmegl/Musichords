@@ -6,12 +6,16 @@ Modelagem de progressões harmônicas para guitarra via grafos de campos harmôn
 **Integrantes:** Gustavo Kiyoshi Ikeda (10439179) · Pedro Montarroyos de Pinho (10440213) · Felipe Marques Leite Martha (10437877)
 
 ## Como executar
+## Engenharia de Software
 
 Único requisito: **Java 11 ou mais novo** (qualquer JDK/JRE; o GitHub Codespaces já vem com Java).
 Não há Maven, bibliotecas nem downloads: o projeto já vem com o `Musichords.jar` pronto.
 
 ```bash
 java -jar Musichords.jar            # interface no navegador -> http://localhost:8080
+```
+## Parte 2 Projeto de Grafos
+```
 java -jar Musichords.jar console    # menu de texto da Parte 1 (opções a..j)
 ```
 
@@ -60,7 +64,7 @@ navegador (HTML/CSS/JS)  ⇄  Servidor.java (HTTP do próprio JDK)  ⇄  ApiMusi
 
 | Passo | Tela | Requisito |
 |---|---|---|
-| 1 | Toque no braço da guitarra (12 casas, uma nota por corda, exemplos, ▶ ouvir) | RF03 |
+| 1 | Toque no braço da guitarra (12 casas, uma nota por corda, exemplos) | RF03 |
 | 2 | Identificação do acorde (tríades, tétrades, inversões, shape de referência) | RF04 |
 | 3 | Mapeamento nos vértices do grafo (Caso 1 — Tônica, Caso 2 — Subdominante...) | RF01 |
 | 4 | Progressões ordenadas pelo custo total + caminho mínimo (Dijkstra) até um acorde | RF02, RF06 |
