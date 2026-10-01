@@ -70,8 +70,6 @@ navegador (HTML/CSS/JS)  ⇄  Servidor.java (HTTP do próprio JDK)  ⇄  ApiMusi
 **Grafo de campos harmônicos** — o menu a..i, Dijkstra entre dois vértices e o desenho do grafo
 (tonalidades no círculo das quintas, pivôs em laranja; clique nos vértices para preencher origem/destino).
 
-Capturas de tela em [`docs/telas`](docs/telas).
-
 ## Estrutura
 
 ```
