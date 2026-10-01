@@ -12,10 +12,12 @@ Modelagem de progressões harmônicas para guitarra via grafos de campos harmôn
 Não há Maven, bibliotecas nem downloads: o projeto já vem com o `Musichords.jar` pronto.
 
 ```bash
+cd Musichords
 java -jar Musichords.jar            # interface no navegador -> http://localhost:8080
 ```
 ## Parte 2 Projeto de Grafos
 ```
+cd Musichords
 java -jar Musichords.jar console    # menu de texto da Parte 1 (opções a..j)
 ```
 
