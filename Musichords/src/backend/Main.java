@@ -5,7 +5,7 @@ import java.util.Scanner;
  * Gustavo Kiyoshi Ikeda - 10439179
  * Pedro Montarroyos de Pinho - 10440213
  * Felipe Marques Leite Martha - 10437877
- *
+ *  
  * Síntese: Classe principal que executa o menu interativo da aplicação
  * Musichords.
  * Histórico de Alterações:
