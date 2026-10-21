@@ -1,0 +1,6 @@
+# saídas de compilação e dos testes (o Musichords.jar continua versionado de propósito)
+Musichords/out/
+Musichords/out-teste/
+Musichords/lib-teste/
+Musichords/servidor.log
+Musichords/estado.json

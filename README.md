@@ -1,5 +1,7 @@
 # Musichords
 
+[![Testes do backend](https://github.com/lelmegl/Musichords/actions/workflows/testes-backend.yml/badge.svg)](https://github.com/lelmegl/Musichords/actions/workflows/testes-backend.yml)
+
 Modelagem de progressões harmônicas para guitarra via grafos de campos harmônicos
 (Teoria dos Grafos / Engenharia de Software — Universidade Presbiteriana Mackenzie).
 
@@ -60,6 +62,56 @@ navegador (HTML/CSS/JS)  ⇄  Servidor.java (HTTP do próprio JDK)  ⇄  ApiMusi
     (use **b) Gravar** para salvar no `grafo.txt`).
 - A interface só apresenta os dados; o único processamento no navegador é o som dos acordes (Web Audio).
 
+## API do backend (endpoints)
+
+Todas as respostas são JSON. Parâmetros vão na URL (GET) ou no corpo como formulário (POST).
+Parâmetro ausente ou inválido → **400**; rota inexistente → **404**; erros de regra (ex.: vértice repetido)
+voltam com **200** e `{"ok": false, "mensagem": "..."}`.
+
+| Método | Rota | Parâmetros | O que devolve |
+|---|---|---|---|
+| GET | `/api/estado` | — | arquivo carregado, nº de vértices/arestas e notas do braço da guitarra |
+| GET | `/api/grafo` | — | vértices, adjacências e a interpretação musical de cada vértice |
+| GET | `/api/identificar` | `casas=-1,3,2,0,1,0` (uma casa por corda, -1 = não tocada) | acorde, tríade, inversão, shape e vértices onde ele aparece |
+| GET | `/api/progressoes` | `raiz`, `tipo` (`MAIOR`, `MENOR`...), `tamanho`, `modulacao` | até 10 progressões ordenadas pelo custo |
+| GET | `/api/caminho` | `raiz`, `tipo`, `destRaiz`, `destTipo` | caminho mínimo (Dijkstra) entre dois acordes |
+| GET | `/api/acordes` | — | acordes distintos presentes no grafo |
+| GET | `/api/exemplos` | — | shapes de exemplo para o braço |
+| GET | `/api/texto` | `tipo=arquivo` \| `lista` \| `conexidade` | saída das opções g, h e i do menu |
+| GET | `/api/dijkstra` | `origem`, `destino` (IDs) | custo e caminho mínimo entre dois vértices |
+| POST | `/api/operacao` | `op=ler` \| `gravar` \| `inserirVertice` \| `inserirAresta` \| `removerVertice` \| `removerAresta` + `id`, `rotulo`, `origem`, `destino`, `peso`, `caminho` | executa as opções a..f do menu |
+
+Exemplo: `curl "http://localhost:8080/api/caminho?raiz=0&tipo=MAIOR&destRaiz=7&destTipo=MAIOR"`
+
+## Testes automatizados
+
+Os testes ficam em `Musichords/test/` (JUnit 4, sem Maven) e cobrem três camadas:
+
+| Classe | O que testa |
+|---|---|
+| `ApiEndpointsTest` | sobe o **servidor HTTP real** numa porta livre e chama cada endpoint `/api/*`, conferindo status, JSON e os efeitos das operações (inserir/remover/gravar/ler) |
+| `GrafoTest` | `Grafo` da Parte 1: inserção, remoção, leitura/gravação do arquivo, conexidade e Dijkstra num grafo calculado à mão |
+| `DominioTest` | identificação de acordes no braço, campo harmônico, funções tonais e escalas |
+
+Cada teste usa uma **cópia** do `grafo.txt` numa pasta temporária, então rodar os testes nunca altera o arquivo do projeto.
+
+**Rodar no computador** (precisa do JDK 11+; na primeira vez baixa o JUnit, ~400 KB):
+
+```bash
+cd Musichords
+./testar.sh        # Windows: testar.bat
+```
+
+**GitHub Actions** — o workflow [`.github/workflows/testes-backend.yml`](.github/workflows/testes-backend.yml) roda
+automaticamente a cada push e pull request na `main` (ou manualmente em *Actions → Testes do backend → Run workflow*):
+
+1. roda `testar.sh` em **Java 11, 17 e 21**;
+2. recompila o `Musichords.jar` com `compilar.sh`;
+3. faz um teste de fumaça: sobe o `.jar` e chama `/api/estado`, `/` e `/api/identificar`;
+4. guarda o `.jar` gerado como artefato da execução.
+
+O resultado de cada teste aparece em tabela no resumo da execução, e o selo no topo deste README fica verde quando tudo passa.
+
 ## Interface
 
 **Fluxo do aplicativo** — os seis passos do wireframe:
@@ -83,6 +135,8 @@ Musichords.jar            programa pronto para rodar
 grafo.txt                 dados do modelo (lidos pelo Grafo)
 executar.bat / .sh        atalhos para rodar
 compilar.bat / .sh        recompilam o .jar a partir de src/
+testar.bat / .sh          compilam e rodam os testes automatizados
+test/                     ApiEndpointsTest, GrafoTest, DominioTest (+ ExecutarTestes, ServidorDeTeste, NoJson)
 src/
 ├── backend/   Grafo, Vertice, Aresta, Main          ← código da Parte 1
 ├── dominio/   Nota, Acorde, TipoAcorde, IdentificadorAcordes, CampoHarmonico, VerticeMusical,

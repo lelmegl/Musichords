@@ -19,6 +19,7 @@ import java.util.Map;
  * Histórico de Alterações:
  * Data       | Autor | Descrição
  * 30/09/2026 | Pedro | Criação da classe.
+ * 20/10/2026 | Pedro | acorde() recusa tipo ausente com IllegalArgumentException (HTTP 400).
  */
 public class ApiMusichords {
 
@@ -269,6 +270,7 @@ public class ApiMusichords {
     // ================================================================== conversões
 
     static Acorde acorde(int raiz, String tipo) {
+        if (tipo == null || tipo.isEmpty()) throw new IllegalArgumentException("informe o tipo do acorde");
         TipoAcorde t = TipoAcorde.valueOf(tipo);
         return new Acorde(raiz, t, IdentificadorAcordes.grafiaPadrao(raiz, t));
     }

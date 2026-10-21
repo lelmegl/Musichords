@@ -35,6 +35,8 @@ import com.sun.net.httpserver.HttpServer;
  * Histórico de Alterações:
  * Data       | Autor | Descrição
  * 30/09/2026 | Pedro | Criação do servidor.
+ * 20/10/2026 | Pedro | criarServidor() para os testes automatizados; status 400 (parâmetro
+ *            |       | inválido) e 404 (rota desconhecida) nas respostas da API.
  */
 public class Servidor {
 
@@ -84,7 +86,7 @@ public class Servidor {
                 InetSocketAddress endereco = codespace
                         ? new InetSocketAddress(porta)
                         : new InetSocketAddress(InetAddress.getLoopbackAddress(), porta);
-                servidor = HttpServer.create(endereco, 0);
+                servidor = criarServidor(api, endereco);
             } catch (BindException ocupada) {
                 porta++;
             }
@@ -93,10 +95,6 @@ public class Servidor {
             System.out.println("Não foi possível abrir uma porta entre 8080 e 8089.");
             return;
         }
-
-        Servidor app = new Servidor(api);
-        servidor.createContext("/", app::tratar);
-        servidor.setExecutor(Executors.newSingleThreadExecutor()); // acesso ao grafo em sequência
         servidor.start();
 
         String url = "http://localhost:" + porta;
@@ -114,6 +112,18 @@ public class Servidor {
         System.out.println("  Para encerrar: Ctrl+C");
         System.out.println("=====================================================");
         abrirNavegador(url, codespace);
+    }
+
+    /**
+     * Cria (sem iniciar) o servidor HTTP com a interface e a API. Usado pelo main e pelos
+     * testes automatizados, que sobem o servidor numa porta livre (porta 0).
+     */
+    public static HttpServer criarServidor(ApiMusichords api, InetSocketAddress endereco) throws IOException {
+        HttpServer servidor = HttpServer.create(endereco, 0);
+        Servidor app = new Servidor(api);
+        servidor.createContext("/", app::tratar);
+        servidor.setExecutor(Executors.newSingleThreadExecutor()); // acesso ao grafo em sequência
+        return servidor;
     }
 
     /** Procura o grafo.txt na pasta atual e, depois, na pasta onde está o .jar. */
@@ -151,11 +161,21 @@ public class Servidor {
         try {
             String caminho = ex.getRequestURI().getPath();
             if (caminho.startsWith("/api/")) {
-                Map<String, String> p = parametros(ex);
-                responder(ex, 200, "application/json; charset=utf-8", rota(caminho.substring(5), p).getBytes(StandardCharsets.UTF_8));
+                String nome = caminho.substring(5);
+                String json = rota(nome, parametros(ex));
+                if (json == null) {
+                    json = Json.obj().put("ok", false).put("mensagem", "Rota desconhecida: " + nome).toString();
+                    responder(ex, 404, "application/json; charset=utf-8", json.getBytes(StandardCharsets.UTF_8));
+                } else {
+                    responder(ex, 200, "application/json; charset=utf-8", json.getBytes(StandardCharsets.UTF_8));
+                }
             } else {
                 arquivoEstatico(ex, caminho.equals("/") ? "/index.html" : caminho);
             }
+        } catch (IllegalArgumentException e) {
+            // parâmetro ausente ou inválido (número mal digitado, tipo de acorde inexistente...)
+            String msg = Json.obj().put("ok", false).put("mensagem", "Parâmetro inválido: " + e.getMessage()).toString();
+            responder(ex, 400, "application/json; charset=utf-8", msg.getBytes(StandardCharsets.UTF_8));
         } catch (Exception e) {
             String msg = Json.obj().put("ok", false).put("mensagem", "Erro: " + e).toString();
             responder(ex, 500, "application/json; charset=utf-8", msg.getBytes(StandardCharsets.UTF_8));
@@ -195,7 +215,7 @@ public class Servidor {
                     return Json.obj().put("ok", false).put("mensagem", "Informe origem e destino numéricos.").toString();
                 }
             default:
-                return Json.obj().put("ok", false).put("mensagem", "Rota desconhecida: " + nome).toString();
+                return null; // tratar() responde 404
         }
     }
 

@@ -1,0 +1,64 @@
+# Testes automatizados do servidor backend do Musichords.
+# Roda a cada push/pull request na main e também manualmente (aba Actions -> "Run workflow").
+name: Testes do backend
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  testes:
+    name: Testes (Java ${{ matrix.java }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        # o README promete "Java 11 ou mais novo": testamos a mínima e as LTS atuais
+        java: ['11', '17', '21']
+    defaults:
+      run:
+        working-directory: Musichords
+
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v5
+
+      - name: Instalar o Java ${{ matrix.java }}
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+
+      - name: Testes de unidade e dos endpoints (JUnit)
+        run: sh testar.sh
+
+      - name: Gerar o Musichords.jar
+        run: sh compilar.sh
+
+      - name: Teste de fumaça do .jar (sobe o servidor e chama a API)
+        run: |
+          java -jar Musichords.jar 8080 > servidor.log 2>&1 &
+          PID=$!
+          for i in $(seq 1 30); do
+            curl -fs http://127.0.0.1:8080/api/estado -o estado.json && break
+            sleep 1
+          done
+          cat servidor.log
+          grep -q '"vertices":84' estado.json
+          curl -fs http://127.0.0.1:8080/ | grep -qi '<html'
+          curl -fs "http://127.0.0.1:8080/api/identificar?casas=-1,3,2,0,1,0" | grep -q '"cifra":"C"'
+          kill $PID
+
+      - name: Guardar o .jar gerado
+        if: matrix.java == '17'
+        uses: actions/upload-artifact@v7
+        with:
+          name: Musichords-jar
+          path: Musichords/Musichords.jar
+          retention-days: 14
