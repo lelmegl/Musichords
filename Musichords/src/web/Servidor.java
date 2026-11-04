@@ -37,6 +37,7 @@ import com.sun.net.httpserver.HttpServer;
  * 30/09/2026 | Pedro | Criação do servidor.
  * 20/10/2026 | Pedro | criarServidor() para os testes automatizados; status 400 (parâmetro
  *            |       | inválido) e 404 (rota desconhecida) nas respostas da API.
+ * 03/11/2026 | Pedro | Deploy na nuvem: usa a variável PORT e escuta em 0.0.0.0 quando ela existe.
  */
 public class Servidor {
 
@@ -61,8 +62,11 @@ public class Servidor {
             Main.main(new String[0]);
             return;
         }
-        int porta = 8080;
-        if (args.length > 0) {
+        // Na nuvem (Render, Heroku...) a plataforma define a porta pela variável PORT
+        String portaNuvem = System.getenv("PORT");
+        boolean nuvem = portaNuvem != null && !portaNuvem.trim().isEmpty();
+        int porta = nuvem ? Integer.parseInt(portaNuvem.trim()) : 8080;
+        if (!nuvem && args.length > 0) {
             try {
                 porta = Integer.parseInt(args[0]);
             } catch (NumberFormatException ignorado) {
@@ -81,6 +85,10 @@ public class Servidor {
 
         boolean codespace = System.getenv("CODESPACES") != null;
         HttpServer servidor = null;
+        if (nuvem) {
+            // a plataforma exige exatamente a porta PORT, aceitando conexões de fora (0.0.0.0)
+            servidor = criarServidor(api, new InetSocketAddress(porta));
+        }
         for (int tentativa = 0; tentativa < 10 && servidor == null; tentativa++) {
             try {
                 InetSocketAddress endereco = codespace
@@ -111,7 +119,7 @@ public class Servidor {
         }
         System.out.println("  Para encerrar: Ctrl+C");
         System.out.println("=====================================================");
-        abrirNavegador(url, codespace);
+        if (!nuvem) abrirNavegador(url, codespace);
     }
 
     /**

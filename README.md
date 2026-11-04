@@ -112,6 +112,30 @@ automaticamente a cada push e pull request na `main` (ou manualmente em *Actions
 
 O resultado de cada teste aparece em tabela no resumo da execução, e o selo no topo deste README fica verde quando tudo passa.
 
+## Deploy na nuvem (Render)
+
+O app é publicado no [Render](https://render.com) a partir do `Dockerfile` na raiz do repositório.
+O build roda os testes e gera o `Musichords.jar`; se algum teste falhar, o deploy não acontece.
+
+Na nuvem o servidor usa a porta da variável `PORT` (definida pelo Render) e aceita conexões externas.
+Por segurança, as opções *a) Ler* e *b) Gravar* só aceitam arquivos `.txt` da pasta do `grafo.txt`.
+
+Para reproduzir:
+
+1. Em [dashboard.render.com](https://dashboard.render.com): **New → Web Service** → conectar este repositório.
+2. **Language:** Docker · **Branch:** `main` · **Instance type:** Free · **Health Check Path:** `/api/estado`.
+3. **Deploy**. A cada push na `main`, o Render publica a nova versão.
+
+Para testar a imagem no próprio computador (precisa do Docker):
+
+```bash
+docker build -t musichords .
+docker run -p 8080:8080 musichords     # http://localhost:8080
+```
+
+> No plano gratuito o serviço "dorme" após 15 min sem acesso; o primeiro acesso depois disso leva ~1 min.
+> Alterações feitas pela tela (inserir/remover/gravar) não sobrevivem a um reinício do serviço.
+
 ## Interface
 
 **Fluxo do aplicativo** — os seis passos do wireframe:
@@ -131,6 +155,7 @@ O resultado de cada teste aparece em tabela no resumo da execução, e o selo no
 ## Estrutura
 
 ```
+Dockerfile (na raiz)      imagem usada no deploy do Render
 Musichords.jar            programa pronto para rodar
 grafo.txt                 dados do modelo (lidos pelo Grafo)
 executar.bat / .sh        atalhos para rodar

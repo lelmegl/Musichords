@@ -347,6 +347,22 @@ public class ApiEndpointsTest {
     }
 
     @Test
+    public void lerEGravarForaDaPastaDoGrafoSaoRecusados() throws Exception {
+        File fora = new File(pasta.getRoot().getParentFile(), "invasor.txt");
+        NoJson gravar = operacao("op", "gravar", "caminho", fora.getPath());
+        assertFalse(gravar.get("ok").logico());
+        assertTrue(gravar.get("mensagem").texto().contains("segurança"));
+        assertFalse("nada pode ser gravado fora da pasta", fora.exists());
+
+        String subindo = new File(pasta.getRoot(), "../grafo.txt").getPath();
+        assertFalse(operacao("op", "ler", "caminho", subindo).get("ok").logico());
+        assertFalse(operacao("op", "ler", "caminho", "/etc/passwd").get("ok").logico());
+        assertFalse("só .txt", operacao("op", "gravar", "caminho",
+                new File(pasta.getRoot(), "script.sh").getPath()).get("ok").logico());
+        assertEquals("o grafo carregado não muda", VERTICES_GRAFO, getOk("/api/estado").get("vertices").inteiro());
+    }
+
+    @Test
     public void operacaoDesconhecidaInformaErro() throws Exception {
         NoJson r = operacao("op", "explodir");
         assertFalse(r.get("ok").logico());

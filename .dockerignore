@@ -1,0 +1,9 @@
+.git
+.github
+*.pdf
+*.docx
+*.png
+Musichords/docs
+Musichords/out
+Musichords/out-teste
+Musichords/lib-teste

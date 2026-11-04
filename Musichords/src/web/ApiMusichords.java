@@ -20,15 +20,38 @@ import java.util.Map;
  * Data       | Autor | Descrição
  * 30/09/2026 | Pedro | Criação da classe.
  * 20/10/2026 | Pedro | acorde() recusa tipo ausente com IllegalArgumentException (HTTP 400).
+ * 03/11/2026 | Pedro | Segurança para o deploy: ler/gravar só arquivos .txt da pasta do grafo.txt.
  */
 public class ApiMusichords {
 
     private final Grafo grafo = new Grafo();
     private BuscaProgressoes busca = new BuscaProgressoes(grafo);
     private String arquivo;
+    /** Única pasta em que as opções a) ler e b) gravar podem mexer: a do grafo.txt. */
+    private final File pastaDados;
 
     public ApiMusichords(String arquivo) {
         this.arquivo = arquivo;
+        this.pastaDados = new File(arquivo).getAbsoluteFile().getParentFile();
+    }
+
+    /**
+     * Segurança: com o site publicado, qualquer pessoa pode chamar a API. Por isso ler e gravar
+     * só aceitam arquivos .txt dentro da pasta do grafo.txt (nada de "../" ou outras pastas).
+     * Retorna o motivo da recusa, ou null se o caminho é permitido.
+     */
+    private String caminhoProibido(String caminho) {
+        if (caminho == null || caminho.trim().isEmpty()) return "Informe o arquivo.";
+        try {
+            File f = new File(caminho.trim()).getCanonicalFile();
+            if (!f.getName().toLowerCase().endsWith(".txt")) return "Só é permitido usar arquivos .txt.";
+            if (pastaDados == null || !pastaDados.getCanonicalFile().equals(f.getParentFile())) {
+                return "Por segurança, só é permitido usar arquivos da pasta do grafo.txt.";
+            }
+            return null;
+        } catch (java.io.IOException e) {
+            return "Caminho inválido.";
+        }
     }
 
     // ================================================================== carga
@@ -189,12 +212,16 @@ public class ApiMusichords {
             switch (op) {
                 case "ler": {                                                            // a)
                     String caminho = p.getOrDefault("caminho", arquivo);
+                    String recusa = caminhoProibido(caminho);
+                    if (recusa != null) return erro(recusa);
                     if (!new File(caminho).exists()) return erro("Arquivo não encontrado: " + caminho);
                     String saida = carregar(caminho);
                     return saida.contains("Arquivo lido") ? ok(saida) : erro(saida);
                 }
                 case "gravar": {                                                         // b)
                     String caminho = p.getOrDefault("caminho", arquivo);
+                    String recusa = caminhoProibido(caminho);
+                    if (recusa != null) return erro(recusa);
                     String saida = capturar(() -> grafo.gravarArquivo(caminho));
                     arquivo = caminho;
                     return saida.startsWith("Erro") ? erro(saida) : ok(saida);
