@@ -9,6 +9,7 @@
  * Histórico de Alterações:
  * Data       | Autor | Descrição
  * 30/09/2026 | Pedro | Criação da classe para a identificação de acordes na interface.
+ * 18/11/2026 | Guilherme | Remoção das notas MIDI.
  */
 public final class Nota {
 
@@ -19,8 +20,6 @@ public final class Nota {
 
     /** Afinação padrão, da 6ª corda (Mi grave) para a 1ª (Mi agudo). */
     public static final int[] AFINACAO_PADRAO = {4, 9, 2, 7, 11, 4};
-    /** Nota MIDI de cada corda solta (E2 A2 D3 G3 B3 E4). */
-    public static final int[] MIDI_CORDAS = {40, 45, 50, 55, 59, 64};
     public static final String[] NOMES_CORDAS = {"E", "A", "D", "G", "B", "e"};
 
     private Nota() {

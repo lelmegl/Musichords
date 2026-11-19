@@ -22,6 +22,7 @@ import java.util.Map;
  * 20/10/2026 | Pedro | acorde() recusa tipo ausente com IllegalArgumentException (HTTP 400).
  * 03/11/2026 | Pedro | Segurança para o deploy: ler/gravar só arquivos .txt da pasta do grafo.txt.
  * 11/11/2026 | Pedro | inserirAresta passa a informar erro quando o Grafo recusa a aresta (ex.: repetida).
+ * 18/11/2026 | Guilherme | Correção de erros.
  */
 public class ApiMusichords {
 
@@ -97,8 +98,7 @@ public class ApiMusichords {
                 .put("braco", braco)
                 .put("bracoBemol", bracoBemol)
                 .put("bracoClasses", classes)
-                .put("cordas", Nota.NOMES_CORDAS)
-                .put("midiCordas", Nota.MIDI_CORDAS);
+                .put("cordas", Nota.NOMES_CORDAS);
     }
 
     /** Vértices e arestas com a interpretação musical de cada vértice (para o desenho). */

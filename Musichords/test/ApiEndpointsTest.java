@@ -25,6 +25,7 @@ import org.junit.rules.TemporaryFolder;
  * Histórico de Alterações:
  * Data       | Autor | Descrição
  * 20/10/2026 | Pedro | Criação dos testes.
+ * 18/11/2026 | Guilherme | Correção de erros.
  */
 public class ApiEndpointsTest {
 
@@ -80,7 +81,6 @@ public class ApiEndpointsTest {
         assertEquals("G", braco.get(0).get(3).texto());   // Mi grave, casa 3
         assertEquals("E", braco.get(0).get(12).texto());  // casa 12 = oitava
         assertEquals("Bb", r.get("bracoBemol").get(1).get(1).texto());
-        assertEquals(Arrays.asList(40, 45, 50, 55, 59, 64), r.get("midiCordas").inteiros());
     }
 
     // ================================================================== GET /api/grafo
