@@ -1,7 +1,7 @@
 /*
  * Musichords — interface no navegador.
  * Toda informação musical e do grafo vem do servidor Java (back-end + grafo.txt) pela API /api/...;
- * aqui ficam apenas a apresentação, a navegação entre os passos e o som (Web Audio).
+ * aqui ficam apenas a apresentação e a navegação entre os passos.
  */
 "use strict";
 
@@ -84,39 +84,6 @@ const S = {
   selecionados: [],
   cliqueOrigem: true,
 };
-
-// ======================================================================= som (Web Audio)
-
-let audio = null;
-function nota(freq, t) {
-  const o = audio.createOscillator();
-  const f = audio.createBiquadFilter();
-  const g = audio.createGain();
-  o.type = "triangle";
-  o.frequency.value = freq;
-  f.type = "lowpass";
-  f.frequency.value = 2400;
-  g.gain.setValueAtTime(0.0001, t);
-  g.gain.exponentialRampToValueAtTime(0.22, t + 0.012);
-  g.gain.exponentialRampToValueAtTime(0.0001, t + 1.8);
-  o.connect(f).connect(g).connect(audio.destination);
-  o.start(t);
-  o.stop(t + 1.9);
-}
-function tocar(casas, atraso = 0) {
-  try {
-    audio = audio || new (window.AudioContext || window.webkitAudioContext)();
-    const t0 = audio.currentTime + 0.05 + atraso;
-    casas.forEach((c, i) => {
-      if (c < 0) return;
-      const midi = S.estado.midiCordas[i] + c;
-      nota(440 * Math.pow(2, (midi - 69) / 12), t0 + i * 0.035);
-    });
-  } catch (e) { /* navegador sem áudio */ }
-}
-function tocarSequencia(lista) {
-  lista.forEach((casas, i) => tocar(casas, i * 1.15));
-}
 
 // ======================================================================= componentes
 
@@ -213,7 +180,6 @@ const PASSOS = [
         braco(),
         h("div", { class: "linha-ao-vivo" },
           h("strong", {}, aoVivo), h("span", { class: "esp" }),
-          h("button", { class: "botao secundario", disabled: q < 3, onclick: () => tocar(S.casas) }, "▶ Ouvir"),
           h("button", { class: "botao tracejado", onclick: () => definirCasas([-1, -1, -1, -1, -1, -1]) }, "Limpar")),
         h("div", { class: "texto-dica" }, "Toque pelo menos 3 notas para formar um acorde. O sistema reconhece tríades maiores, menores e diminutas (e tétrades com sétima, reduzidas à tríade)."),
         h("div", { class: "chips" }, h("span", { class: "texto-suave" }, "Exemplos:"),
@@ -252,8 +218,7 @@ const PASSOS = [
           h("div", {},
             h("div", { class: "rotulo-secao" }, "SHAPE DE REFERÊNCIA"),
             h("div", { class: "texto-suave" }, `${r.triade.cifra}  ·  ${r.shape.tablatura}`),
-            h("div", { class: "texto-suave" }, r.shape.descricao),
-            h("button", { class: "botao secundario", style: "margin-top:8px", onclick: () => tocar(r.shape.casas) }, "▶ Ouvir este shape"))),
+            h("div", { class: "texto-suave" }, r.shape.descricao))),
       ];
     },
   },
@@ -347,9 +312,6 @@ const PASSOS = [
         h("div", { class: "texto-suave centro" }, `${e.acorde.cifra}  ·  ${e.shape.tablatura}  ·  ${e.shape.descricao}`),
         h("div", { class: "texto-suave centro" }, e.papeis.join("  →  ")),
         h("div", { class: "texto-custo centro" }, transicao),
-        h("div", { class: "linha-centro", style: "gap:8px" },
-          h("button", { class: "botao secundario", onclick: () => tocar(e.shape.casas) }, "▶ Ouvir acorde"),
-          h("button", { class: "botao secundario", onclick: () => tocarSequencia(etapas.map((x) => x.shape.casas)) }, "▶ Ouvir progressão")),
       ];
     },
   },

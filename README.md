@@ -7,6 +7,41 @@ Modelagem de progressões harmônicas para guitarra via grafos de campos harmôn
 
 **Integrantes:** Gustavo Kiyoshi Ikeda (10439179) · Pedro Montarroyos de Pinho (10440213) · Felipe Marques Leite Martha (10437877)
 
+## Retomada dos objetivos
+
+Iniciantes de guitarra e violão costumam aprender acordes de forma isolada, memorizando posições dos dedos sem
+compreender por que certos acordes soam bem em sequência. As ferramentas mais comuns (ex.: Cifra Club, Chordify)
+mostram o shape de cada acorde ou identificam acordes de músicas, mas não sugerem progressões nem medem o esforço
+físico de trocar de um acorde para outro.
+
+**Objetivo geral:** desenvolver um aplicativo que, a partir das notas selecionadas pelo usuário no braço da guitarra,
+identifique o acorde e sugira progressões harmonicamente válidas e de menor custo físico de execução, utilizando um
+grafo direcionado e ponderado de campos harmônicos:
+
+- **vértices** = papel funcional (grau) de um acorde em uma tonalidade;
+- **arestas funcionais** = transições permitidas dentro de uma tonalidade (tônica, subdominante, dominante);
+- **arestas de pivô (peso 0)** = mesmo acorde físico em tonalidades diferentes;
+- **peso** = esforço físico de transição entre os shapes; as progressões saem de uma busca de caminho mínimo.
+
+O projeto se relaciona com a **ODS 4 – Educação de Qualidade** (aproxima a teoria harmônica da prática no instrumento)
+e a **ODS 9 – Indústria, Inovação e Infraestrutura** (ferramenta educacional de baixo custo baseada em software).
+
+## Principais funcionalidades alcançadas
+
+- **Braço interativo** de 12 casas, uma nota por corda, com exemplos prontos (RF03).
+- **Identificação do acorde**: tríades maiores, menores e diminutas, tétrades com sétima (reduzidas à tríade),
+  detecção de inversão e shape de referência (RF04).
+- **Mapeamento no grafo**: todos os vértices em que o acorde aparece, com sua função tonal e o campo harmônico (RF01).
+- **Progressões sugeridas** de 3 a 6 acordes, ordenadas pelo custo total (soma dos pesos das arestas), com opção de
+  modulação por acorde pivô (RF02).
+- **Caminho mínimo (Dijkstra)** do acorde tocado até um acorde de destino (RF06).
+- **Shapes da progressão** escolhida, acorde a acorde, com o peso de cada transição (RF07).
+- **Extras**: músicas de referência, escalas no braço e campo harmônico completo (RF05).
+- **Aba do grafo**: opções a..i do menu da Parte 1 (ler, gravar, inserir/remover vértices e arestas, conteúdo do
+  arquivo, lista de adjacência, conexidade), Dijkstra entre dois vértices e desenho do grafo no círculo das quintas.
+- **Modo console** da Parte 1 (`java -jar Musichords.jar console`).
+- **API REST em JSON** documentada, **testes automatizados** no GitHub Actions e **deploy na nuvem** (Docker + Render).
+
 ## Como executar
 ## Engenharia de Software
 
@@ -46,7 +81,30 @@ Depois de editar o código-fonte, rode `compilar.bat` / `./compilar.sh` para ger
 (precisa do JDK). Os arquivos da interface (`src/web/static`) também são lidos direto da pasta, então mudanças
 no HTML/CSS/JS aparecem só recarregando a página quando o programa é executado pela IDE.
 
-## Como funciona
+## Desenho da arquitetura do sistema
+
+```mermaid
+flowchart TD
+    U["Usuário"] --> UI["Interface web: index.html, estilo.css, app.js"]
+    UI -- "HTTP / JSON em /api/..." --> S["Servidor.java - HTTP do próprio JDK"]
+    S --> API["ApiMusichords + Json"]
+    API --> DOM["Domínio musical: IdentificadorAcordes, CampoHarmonico, BuscaProgressoes, BancoShapes, ConteudoExtra..."]
+    API --> G["Back-end da Parte 1: Grafo, Vertice, Aresta"]
+    DOM --> G
+    C["Main.java - menu console a..j"] --> G
+    G -- "lê e grava" --> TXT[("grafo.txt")]
+```
+
+**Entrega contínua:**
+
+```mermaid
+flowchart LR
+    P["push na main"] --> GA["GitHub Actions: testes em Java 11, 17 e 21 + imagem Docker"]
+    P --> R["Render: docker build roda testar.sh e compilar.sh"]
+    R --> C["Container eclipse-temurin:21-jre com Musichords.jar e grafo.txt, porta PORT"]
+```
+
+Resumo do fluxo:
 
 ```
 navegador (HTML/CSS/JS)  ⇄  Servidor.java (HTTP do próprio JDK)  ⇄  ApiMusichords  ⇄  Grafo / domínio  ⇄  grafo.txt
@@ -60,7 +118,7 @@ navegador (HTML/CSS/JS)  ⇄  Servidor.java (HTTP do próprio JDK)  ⇄  ApiMusi
   - o custo das progressões é a soma dos **pesos das arestas**; as arestas de **peso 0** são os pivôs entre tonalidades;
   - inserir/remover pela aba do grafo altera o grafo em memória e o fluxo passa a usar os novos dados
     (use **b) Gravar** para salvar no `grafo.txt`).
-- A interface só apresenta os dados; o único processamento no navegador é o som dos acordes (Web Audio).
+- A interface só apresenta os dados; o navegador não faz nenhum processamento.
 
 ## API do backend (endpoints)
 
@@ -136,6 +194,10 @@ docker run -p 8080:8080 musichords     # http://localhost:8080
 > No plano gratuito o serviço "dorme" após 15 min sem acesso; o primeiro acesso depois disso leva ~1 min.
 > Alterações feitas pela tela (inserir/remover/gravar) não sobrevivem a um reinício do serviço.
 
+### Aplicação em produção (vídeo de até 2 minutos)
+
+### Dificuldades e experiências no deploy
+
 ## Interface
 
 **Fluxo do aplicativo** — os seis passos do wireframe:
@@ -174,3 +236,8 @@ src/
 
 Nenhum método existente do `Grafo` foi alterado. Foram **acrescentados** `getVertices()` (somente leitura),
 `getVerticeById()` passou de `private` para `public`, e `dijkstra(...)` (caminho mínimo com uma ou várias origens).
+
+
+## Pontos de melhoria e evolução do projeto
+
+## Potencial de continuidade (TCC, IC, Incubadora)
