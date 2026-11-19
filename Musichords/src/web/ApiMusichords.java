@@ -21,6 +21,7 @@ import java.util.Map;
  * 30/09/2026 | Pedro | Criação da classe.
  * 20/10/2026 | Pedro | acorde() recusa tipo ausente com IllegalArgumentException (HTTP 400).
  * 03/11/2026 | Pedro | Segurança para o deploy: ler/gravar só arquivos .txt da pasta do grafo.txt.
+ * 11/11/2026 | Pedro | inserirAresta passa a informar erro quando o Grafo recusa a aresta (ex.: repetida).
  */
 public class ApiMusichords {
 
@@ -250,7 +251,9 @@ public class ApiMusichords {
                         return erro("Não foi possível inserir: os vértices " + o + " e " + d + " precisam existir.");
                     }
                     if (peso < 0) return erro("O peso deve ser não negativo (o Dijkstra exige pesos ≥ 0).");
-                    grafo.inserirAresta(o, d, peso);
+                    final boolean[] inserida = new boolean[1];
+                    String saida = capturar(() -> inserida[0] = grafo.inserirAresta(o, d, peso));
+                    if (!inserida[0]) return erro(saida.trim()); // ex.: aresta repetida
                     grafoAlterado();
                     return ok("Aresta " + o + " → " + d + " (peso " + peso + ") inserida com sucesso.");
                 }

@@ -20,6 +20,7 @@ import org.junit.Test;
  * Histórico de Alterações:
  * Data       | Autor | Descrição
  * 20/10/2026 | Pedro | Criação dos testes.
+ * 11/11/2026 | Pedro | Testes que conferem os pesos e os pivôs do grafo.txt contra os shapes reais.
  */
 public class DominioTest {
 
@@ -131,5 +132,55 @@ public class DominioTest {
     @Test(expected = IllegalArgumentException.class)
     public void tonalidadeInvalidaEhRecusada() {
         new CampoHarmonico("X");
+    }
+
+    // ================================================================== Pesos do grafo.txt
+
+    /** Nº de cordas cuja posição (abafada, solta ou casa) muda entre dois shapes. */
+    private static int cordasQueMudam(int[] a, int[] b) {
+        int d = 0;
+        for (int i = 0; i < 6; i++) if (a[i] != b[i]) d++;
+        return d;
+    }
+
+    private static Grafo grafoDoProjeto() {
+        Grafo g = new Grafo();
+        ApiMusichords.capturar(() -> g.lerArquivo("grafo.txt"));
+        return g;
+    }
+
+    @Test
+    public void pesoDeCadaArestaEhONumeroDeCordasQueMudam() {
+        Grafo g = grafoDoProjeto();
+        for (Vertice v : g.getVertices()) {
+            int[] origem = BancoShapes.shape(VerticeMusical.interpretar(v).getAcorde()).getPosicoesPorCorda();
+            for (Aresta a : v.getAdjacencias()) {
+                Vertice d = g.getVerticeById(a.getDestinoId());
+                int[] destino = BancoShapes.shape(VerticeMusical.interpretar(d).getAcorde()).getPosicoesPorCorda();
+                assertEquals(v.getRotulo() + " -> " + d.getRotulo(), cordasQueMudam(origem, destino), a.getPeso());
+            }
+        }
+    }
+
+    @Test
+    public void pivosLigamOMesmoAcordeNosDoisSentidosComPesoZero() {
+        Grafo g = grafoDoProjeto();
+        int pivos = 0;
+        for (Vertice v : g.getVertices()) {
+            Acorde acorde = VerticeMusical.interpretar(v).getAcorde();
+            for (Vertice outro : g.getVertices()) {
+                if (outro == v || !VerticeMusical.interpretar(outro).getAcorde().equals(acorde)) continue;
+                pivos++;
+                boolean existe = false;
+                for (Aresta a : v.getAdjacencias()) {
+                    if (a.getDestinoId() == outro.getId()) {
+                        existe = true;
+                        assertEquals(0, a.getPeso());
+                    }
+                }
+                assertTrue("faltou o pivô " + v.getRotulo() + " -> " + outro.getRotulo(), existe);
+            }
+        }
+        assertEquals(144, pivos); // 24 tríades (maiores e menores) x 3 tonalidades x 2 sentidos
     }
 }

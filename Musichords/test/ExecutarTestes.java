@@ -25,10 +25,11 @@ import org.junit.runner.notification.RunListener;
  * Histórico de Alterações:
  * Data       | Autor | Descrição
  * 20/10/2026 | Pedro | Criação da classe.
+ * 13/11/2026 | Pedro | Inclusão dos testes da Parte 3 (GrafoParte3Test).
  */
 public class ExecutarTestes {
 
-    private static final Class<?>[] CLASSES = {DominioTest.class, GrafoTest.class, ApiEndpointsTest.class};
+    private static final Class<?>[] CLASSES = {DominioTest.class, GrafoTest.class, GrafoParte3Test.class, ApiEndpointsTest.class};
 
     public static void main(String[] args) throws Exception {
         Relatorio relatorio = new Relatorio();

@@ -20,8 +20,29 @@ java -jar Musichords.jar            # interface no navegador -> http://localhost
 ## Parte 2 Projeto de Grafos
 ```
 cd Musichords
-java -jar Musichords.jar console    # menu de texto da Parte 1 (opções a..j)
+java -jar Musichords.jar console    # menu de texto (Parte 1: a..i, Parte 3: k..o, j encerra)
 ```
+
+## Parte 3 Projeto de Grafos
+
+Título da aplicação: **MUSICHORDS - Progressões Harmônicas de Menor Esforço via Grafos**.
+O menu de texto ganhou cinco opções, todas com o conteúdo da disciplina e implementadas sem bibliotecas de grafos:
+
+| Opção | Técnica | O que mostra no grafo do projeto |
+|---|---|---|
+| **k)** Progressão de menor esforço | Dijkstra (item 1: solução do problema) | origem e destino por ID ou rótulo (ex.: `G_I` → `C_I`); imprime o caminho, cada troca com seu peso (peso 0 = pivô, mesmo acorde em outra tonalidade) e o custo total — `G_I → C_V → C_I`, custo 5 |
+| **l)** Graus e caminho euleriano | grau de entrada/saída/total, teorema de Euler | tabela de graus (mín. 2 em `C_vii`, máx. 14 em `C_I`); 48 vértices de grau ímpar → **não** há caminho euleriano |
+| **m)** Hamilton e Caixeiro Viajante | teoremas de Dirac e Ore, ciclo hamiltoniano, vizinho mais próximo com distâncias de Floyd | Dirac e Ore inconclusivos (grau mín. 2 < 42; soma 28 < 84), mas o percurso em profundidade com retorno (backtracking) encontra um ciclo hamiltoniano e o verifica; rota do Caixeiro Viajante a partir de `C_I` com custo 248 |
+| **n)** Coloração | coloração por classe (Welsh e Powell) e k-partição | 5 cores na ordem do arquivo e 4 cores ordenando por grau; `C_I C_ii C_V C_vi` (progressão I–vi–ii–V) formam um K4, então χ = 4: o grafo é 4-partido e não é bipartido |
+| **o)** Árvore geradora mínima | Kruskal, com o percurso em profundidade para detectar ciclos (conferido com Prim) | 83 arestas, custo 149 (48 pivôs de peso 0 + 35 trocas) |
+
+As opções l, m, n e o tratam o grafo subjacente (sem direção) quando o conceito é de grafo não orientado
+(coloração, árvore geradora mínima, grau total); o ciclo hamiltoniano e o Dijkstra respeitam o sentido das arestas.
+
+Os algoritmos seguem o material da disciplina. Os percursos em profundidade (pilha) e em largura (fila) foram escritos
+exatamente como nos slides de *Algoritmos de Busca em Grafos* e são usados pelo Kruskal (ciclo), pela conexidade do
+grafo subjacente (teste de Euler) e pelo teste de bipartido. O único acréscimo fora dos slides são as podas da busca
+do ciclo hamiltoniano, sem as quais a busca não termina em 84 vértices.
 
 Ou use os atalhos: **Windows** → dois cliques em `executar.bat` · **Linux/macOS** → `./executar.sh`.
 
@@ -45,6 +66,20 @@ Com a pasta `.devcontainer/` incluída, o Codespace já inicia o Musichords e ab
 Depois de editar o código-fonte, rode `compilar.bat` / `./compilar.sh` para gerar o `Musichords.jar` de novo
 (precisa do JDK). Os arquivos da interface (`src/web/static`) também são lidos direto da pasta, então mudanças
 no HTML/CSS/JS aparecem só recarregando a página quando o programa é executado pela IDE.
+
+## O grafo (`grafo.txt`)
+
+| Item | Valor |
+|---|---|
+| Categoria | 6 — orientado, com peso nas arestas |
+| Vértices | 84 = 12 tonalidades maiores × 7 graus, rótulo `Tonalidade_Grau` (ex.: `G_IV` = acorde C como IV de Sol maior) |
+| Arestas funcionais | 240 (20 por tonalidade), transições permitidas pelas funções tonais |
+| Arestas de pivô | 144, peso 0, nos dois sentidos, entre vértices do mesmo acorde físico (ex.: `C_I` ↔ `G_IV` ↔ `F_V`) |
+| Peso | número de cordas que mudam de posição entre os shapes dos dois acordes (0 a 6) |
+| Conexidade | C3 — fortemente conexo |
+
+O teste `DominioTest` confere, aresta por aresta, que cada peso do `grafo.txt` corresponde aos shapes do `BancoShapes`
+e que todos os pivôs existem nos dois sentidos.
 
 ## Como funciona
 
@@ -85,12 +120,13 @@ Exemplo: `curl "http://localhost:8080/api/caminho?raiz=0&tipo=MAIOR&destRaiz=7&d
 
 ## Testes automatizados
 
-Os testes ficam em `Musichords/test/` (JUnit 4, sem Maven) e cobrem três camadas:
+Os testes ficam em `Musichords/test/` (JUnit 4, sem Maven) e cobrem três camadas (82 testes):
 
 | Classe | O que testa |
 |---|---|
 | `ApiEndpointsTest` | sobe o **servidor HTTP real** numa porta livre e chama cada endpoint `/api/*`, conferindo status, JSON e os efeitos das operações (inserir/remover/gravar/ler) |
 | `GrafoTest` | `Grafo` da Parte 1: inserção, remoção, leitura/gravação do arquivo, conexidade e Dijkstra num grafo calculado à mão |
+| `GrafoParte3Test` | percursos em profundidade e largura no grafo G10 do slide (mesma ordem do material) e opções k..o: cada técnica num grafo pequeno calculado à mão (ciclo, triângulo, estrela, caminho) e depois no `grafo.txt` (custo 5, 48 ímpares, ciclo hamiltoniano válido, PCV 248, χ = 4, AGM 149) |
 | `DominioTest` | identificação de acordes no braço, campo harmônico, funções tonais e escalas |
 
 Cada teste usa uma **cópia** do `grafo.txt` numa pasta temporária, então rodar os testes nunca altera o arquivo do projeto.
@@ -149,7 +185,7 @@ docker run -p 8080:8080 musichords     # http://localhost:8080
 | 5 | Shapes da progressão escolhida, com o peso de cada transição | RF07 |
 | 6 | Extras: músicas de referência, escalas no braço, campo harmônico | RF05 |
 
-**Grafo de campos harmônicos** — o menu a..i, Dijkstra entre dois vértices e o desenho do grafo
+**Grafo de campos harmônicos** — o menu a..i da Parte 1, Dijkstra entre dois vértices e o desenho do grafo
 (tonalidades no círculo das quintas, pivôs em laranja; clique nos vértices para preencher origem/destino).
 
 ## Estrutura
@@ -161,7 +197,7 @@ grafo.txt                 dados do modelo (lidos pelo Grafo)
 executar.bat / .sh        atalhos para rodar
 compilar.bat / .sh        recompilam o .jar a partir de src/
 testar.bat / .sh          compilam e rodam os testes automatizados
-test/                     ApiEndpointsTest, GrafoTest, DominioTest (+ ExecutarTestes, ServidorDeTeste, NoJson)
+test/                     ApiEndpointsTest, GrafoTest, GrafoParte3Test, DominioTest (+ ExecutarTestes, ServidorDeTeste, NoJson)
 src/
 ├── backend/   Grafo, Vertice, Aresta, Main          ← código da Parte 1
 ├── dominio/   Nota, Acorde, TipoAcorde, IdentificadorAcordes, CampoHarmonico, VerticeMusical,
@@ -172,5 +208,11 @@ src/
 
 ### Acréscimos ao back-end
 
-Nenhum método existente do `Grafo` foi alterado. Foram **acrescentados** `getVertices()` (somente leitura),
-`getVerticeById()` passou de `private` para `public`, e `dijkstra(...)` (caminho mínimo com uma ou várias origens).
+Foram **acrescentados** `getVertices()` (somente leitura), `getVerticeById()` passou de `private` para `public`,
+e `dijkstra(...)` (caminho mínimo com uma ou várias origens). `inserirVertice`, `inserirAresta`, `removerVertice` e
+`removerAresta` passaram a devolver `boolean` e a recusar ID repetido, vértice inexistente, peso negativo e aresta repetida.
+
+Na Parte 3 entraram `getVerticeByRotulo`, `mostrarMenorEsforco` (k), `analisarGrausEEuler` (l),
+`percursoProfundidade` e `percursoLargura` (como nos slides), `cicloHamiltoniano`, `floyd`, `rotaVizinhoMaisProximo` e
+`analisarHamilton` (m), `coloracaoPorClasse`, `ehClique`, `cliqueDaProgressao`,
+`ehBipartido` e `mostrarColoracao` (n), `kruskal`, `custoPrim` e `mostrarArvoreGeradoraMinima` (o).

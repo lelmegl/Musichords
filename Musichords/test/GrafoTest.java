@@ -24,6 +24,7 @@ import org.junit.rules.TemporaryFolder;
  * Histórico de Alterações:
  * Data       | Autor | Descrição
  * 20/10/2026 | Pedro | Criação dos testes.
+ * 11/11/2026 | Pedro | Testes das validações de inserção e remoção (situações de erro).
  */
 public class GrafoTest {
 
@@ -70,6 +71,34 @@ public class GrafoTest {
         String erro = ApiMusichords.capturar(() -> g.removerAresta(1, 2));
         assertTrue(erro, erro.startsWith("Erro"));
         assertEquals(3, arestas(g));
+    }
+
+    @Test
+    public void inserirVerticeComIdRepetidoEhRecusado() {
+        String saida = ApiMusichords.capturar(() -> assertFalse(g.inserirVertice(3, "Outro")));
+        assertTrue(saida, saida.startsWith("Erro"));
+        assertEquals(5, g.getVertices().size());
+        assertEquals("V3", g.getVerticeById(3).getRotulo());
+    }
+
+    @Test
+    public void inserirArestaInvalidaEhRecusada() {
+        ApiMusichords.capturar(() -> {
+            assertFalse("destino inexistente", g.inserirAresta(1, 99, 2));
+            assertFalse("origem inexistente", g.inserirAresta(99, 1, 2));
+            assertFalse("peso negativo", g.inserirAresta(4, 5, -1));
+            assertFalse("aresta repetida", g.inserirAresta(1, 2, 7));
+            assertTrue("aresta nova válida", g.inserirAresta(4, 5, 0));
+        });
+        assertEquals(5, arestas(g));
+    }
+
+    @Test
+    public void removerVerticeInexistenteNaoAlteraOGrafo() {
+        String saida = ApiMusichords.capturar(() -> assertFalse(g.removerVertice(99)));
+        assertTrue(saida, saida.contains("não existe"));
+        assertEquals(5, g.getVertices().size());
+        assertEquals(4, arestas(g));
     }
 
     @Test
@@ -131,7 +160,7 @@ public class GrafoTest {
         String saida = ApiMusichords.capturar(() -> projeto.lerArquivo("grafo.txt"));
         assertTrue(saida, saida.contains("Arquivo lido"));
         assertEquals(84, projeto.getVertices().size());
-        assertEquals(252, arestas(projeto));
+        assertEquals(384, arestas(projeto));
         assertNotNull(projeto.getVerticeById(0));
         assertEquals("C_I", projeto.getVerticeById(0).getRotulo());
     }

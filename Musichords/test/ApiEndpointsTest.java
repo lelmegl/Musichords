@@ -29,7 +29,7 @@ import org.junit.rules.TemporaryFolder;
 public class ApiEndpointsTest {
 
     private static final int VERTICES_GRAFO = 84;
-    private static final int ARESTAS_GRAFO = 252;
+    private static final int ARESTAS_GRAFO = 384;
 
     @Rule
     public TemporaryFolder pasta = new TemporaryFolder();
@@ -208,7 +208,8 @@ public class ApiEndpointsTest {
     @Test
     public void caminhoMinimoDeDoAteSol() throws Exception {
         NoJson p = getOk("/api/caminho?raiz=0&tipo=MAIOR&destRaiz=7&destTipo=MAIOR").get("progressao");
-        assertEquals(4, p.get("custo").inteiro());
+        // C (x32010) -> G (320003): 5 cordas mudam de posição
+        assertEquals(5, p.get("custo").inteiro());
         assertEquals(Arrays.asList(0, 4), p.get("caminho").inteiros()); // C_I -> C_V
         assertEquals("C – G", p.get("cifras").texto());
     }
@@ -258,7 +259,7 @@ public class ApiEndpointsTest {
     public void dijkstraEntreDoisVertices() throws Exception {
         NoJson r = getOk("/api/dijkstra?origem=0&destino=4");
         assertTrue(r.get("ok").logico());
-        assertEquals(4, r.get("custo").inteiro());
+        assertEquals(5, r.get("custo").inteiro()); // C_I -> C_V: 5 cordas mudam
         assertEquals(Arrays.asList(0, 4), r.get("caminho").inteiros());
     }
 
