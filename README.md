@@ -43,8 +43,6 @@ e a **ODS 9 – Indústria, Inovação e Infraestrutura** (ferramenta educaciona
 - **API REST em JSON** documentada, **testes automatizados** no GitHub Actions e **deploy na nuvem** (Docker + Render).
 
 ## Como executar
-## Engenharia de Software
-
 Único requisito: **Java 11 ou mais novo** (qualquer JDK/JRE; o GitHub Codespaces já vem com Java).
 Não há Maven, bibliotecas nem downloads: o projeto já vem com o `Musichords.jar` pronto.
 
@@ -194,9 +192,19 @@ docker run -p 8080:8080 musichords     # http://localhost:8080
 > No plano gratuito o serviço "dorme" após 15 min sem acesso; o primeiro acesso depois disso leva ~1 min.
 > Alterações feitas pela tela (inserir/remover/gravar) não sobrevivem a um reinício do serviço.
 
-### Aplicação em produção (vídeo de até 2 minutos)
+### Aplicação em produção
+
+
+
+https://github.com/user-attachments/assets/8f4b22f7-402a-43b8-83f1-8b1384dcc23a
+
+
 
 ### Dificuldades e experiências no deploy
+
+- Empacotamento com Docker sem gerenciador de pacotes (sem Maven/Gradle): como o projeto utiliza apenas o JDK puro e scripts (compilar.sh e testar.sh), o Render não possui um buildpack Java nativo para essa estrutura. A solução foi criar um Dockerfile multi-stage na raiz do repositório: o primeiro estágio (eclipse-temurin:21-jdk) baixa o JUnit, executa todos os testes automatizados e gera o Musichords.jar, e o segundo estágio (eclipse-temurin:21-jre) leva apenas o .jar e o grafo.txt para uma imagem enxuta de produção.
+- Segurança nas operações de leitura e gravação de arquivos: com a aplicação pública na internet, os endpoints que executam as opções a) Ler e b) Gravar do grafo poderiam ser explorados para acessar arquivos arbitrários do container (path traversal). Foi preciso adicionar uma validação em ApiMusichords.java restringindo a leitura e gravação exclusivamente a arquivos .txt dentro do próprio diretório do grafo.txt.
+- Adaptação do grafo de console (Parte 1) para um servidor web em nuvem: na Parte 1, a classe Grafo (Vertice, Aresta) foi projetada para rodar localmente no terminal (Main.java), imprimindo resultados diretamente no System.out (lista de adjacência, conteúdo do arquivo, conexidade FCONEX e grafo reduzido). Para levar o projeto à web e publicá-lo no Render sem reescrever nem quebrar os métodos originais da Parte 1, a camada ApiMusichords precisou interceptar e capturar a saída padrão do Grafo em memória (com UTF-8 forçado via -Dfile.encoding=UTF-8 no container) e expor métodos como getVertices() e dijkstra(...) via endpoints JSON (/api/grafo, /api/texto, /api/dijkstra, /api/caminho)
 
 ## Interface
 
@@ -240,4 +248,10 @@ Nenhum método existente do `Grafo` foi alterado. Foram **acrescentados** `getVe
 
 ## Pontos de melhoria e evolução do projeto
 
-## Potencial de continuidade (TCC, IC, Incubadora)
+- Reprodução sonora com suporte a MIDI: implementar síntese e suporte a MIDI para que o usuário possa escutar com fidelidade tanto as notas e acordes isolados quanto as progressões completas sugeridas pelo sistema, independentemente do grau, tonalidade ou região do braço escolhida.
+- Integração com API de recomendação de músicas e guia de aprendizado: integrar uma API externa de catálogo musical/cifras para recomendar dinamicamente músicas reais que utilizem a progressão escolhida pelo usuário (expandindo a lista estática atual) e exibir um passo a passo de como aprender a tocar essas músicas no instrumento (ritmo, tempo de troca e estrutura da música).
+- Expansão harmônica e múltiplos shapes no grafo: ampliar o grafo para incluir campos harmônicos menores, tétrades como vértices próprios e múltiplos shapes (voicings em diferentes regiões do braço) para um mesmo acorde.
+
+## Potencial de continuidade
+
+Incubadora: transformação do Musichords em uma plataforma web/mobile de aprendizado musical interativo (alinhada à ODS 4), voltada a estudantes autodidatas e escolas de música, conectando teoria harmônica, prática no braço do instrumento e aprendizado guiado de músicas reais.
