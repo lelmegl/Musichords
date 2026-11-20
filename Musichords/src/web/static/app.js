@@ -2,6 +2,8 @@
  * Musichords — interface no navegador.
  * Toda informação musical e do grafo vem do servidor Java (back-end + grafo.txt) pela API /api/...;
  * aqui ficam apenas a apresentação e a navegação entre os passos.
+ * 20/11/2026 | Pedro | Parte 3 na aba do grafo: opção k por rótulo e opções l..o, com o texto do
+ *            |       | console e destaques no desenho (grau ímpar, ciclo, cores e árvore mínima).
  */
 "use strict";
 
@@ -440,7 +442,8 @@ function status(msg, ok = true) {
 
 function mostrarSub(nome) {
   document.querySelectorAll(".sub-aba").forEach((b) => b.classList.toggle("ativa", b.dataset.sub === nome));
-  ["visual", "lista", "arquivo", "conexidade", "dijkstra"].forEach((n) => $("sub-" + n).classList.toggle("oculto", n !== nome));
+  ["visual", "lista", "arquivo", "conexidade", "dijkstra", "euler", "hamilton", "coloracao", "agm"]
+    .forEach((n) => $("sub-" + n).classList.toggle("oculto", n !== nome));
 }
 
 async function recarregarGrafo() {
@@ -454,6 +457,7 @@ async function recarregarGrafo() {
   $("sub-conexidade").textContent = c.texto;
   S.caminhoGrafo = [];
   S.selecionados = [];
+  S.analise = null;
   desenharGrafo();
 }
 
@@ -479,9 +483,44 @@ async function dijkstraGrafo() {
   if (!r.ok) { status(r.mensagem, false); return; }
   $("sub-dijkstra").textContent = r.texto;
   S.caminhoGrafo = r.caminho;
+  S.analise = null;
   desenharGrafo();
   status(r.custo >= 0 ? `Caminho mínimo: custo ${r.custo} (destacado na visualização).` : "O destino não é alcançável a partir da origem.", r.custo >= 0);
   mostrarSub("dijkstra");
+}
+
+/** Opções l..o: mostra o texto do console na sub-aba e destaca o resultado no desenho. */
+async function analiseGrafo(tipo, botao) {
+  const textos = { euler: "Calculando graus...", hamilton: "Procurando o ciclo hamiltoniano...", coloracao: "Colorindo...", agm: "Montando a árvore mínima..." };
+  status(textos[tipo] || "Calculando...");
+  if (botao) botao.disabled = true;
+  try {
+    const r = await api("analise", { tipo });
+    $("sub-" + tipo).textContent = r.texto;
+    if (!r.ok) { status(r.texto, false); return; }
+    S.analise = r;
+    S.caminhoGrafo = [];
+    S.selecionados = [];
+    desenharGrafo();
+    const resumo = {
+      euler: () => `${r.impares.length} vértices de grau ímpar (contornados no desenho): ${r.euleriano ? "há" : "não há"} caminho euleriano.`,
+      hamilton: () => r.ciclo.length ? `Ciclo hamiltoniano com ${r.ciclo.length} vértices destacado em roxo.` : "Ciclo hamiltoniano não encontrado.",
+      coloracao: () => `${r.classes.length} cores: o desenho mostra cada vértice com a cor da sua classe.`,
+      agm: () => `Árvore geradora mínima: ${r.arestas.length} arestas, custo ${r.custo} (em verde no desenho).`,
+    }[tipo];
+    status(resumo ? resumo() : "Análise concluída.");
+    mostrarSub("visual");
+  } finally {
+    if (botao) botao.disabled = false;
+  }
+}
+
+function limparDestaques() {
+  S.analise = null;
+  S.caminhoGrafo = [];
+  S.selecionados = [];
+  desenharGrafo();
+  status("Destaques removidos.");
 }
 
 /** Desenho do grafo: tonalidades no círculo das quintas, 7 graus em cada "cacho". */
@@ -502,11 +541,24 @@ function desenharGrafo() {
 
   const svg = s("svg", { viewBox: `0 0 ${W} ${H}`, preserveAspectRatio: "xMidYMid meet" });
   const defs = s("defs");
-  for (const [id, cor] of [["seta-p", "#E8862A"], ["seta-c", "#3355FF"]]) {
+  for (const [id, cor] of [["seta-p", "#E8862A"], ["seta-c", "#3355FF"], ["seta-h", "#7B1FA2"]]) {
     defs.append(s("marker", { id, viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 6, markerHeight: 6, orient: "auto-start-reverse" },
       s("path", { d: "M0,0 L10,5 L0,10 z", fill: cor })));
   }
   svg.append(defs);
+
+  // Parte 3: o que cada análise destaca
+  const an = S.analise || {};
+  const PALETA = ["#E53935", "#1E88E5", "#43A047", "#FDD835", "#8E24AA", "#00897B", "#6D4C41"];
+  const corClasse = {};
+  (an.classes || []).forEach((c, i) => c.forEach((id) => { corClasse[id] = PALETA[i % PALETA.length]; }));
+  const impares = new Set(an.impares || []);
+  const noCiclo = new Set();
+  const ciclo = an.ciclo || [];
+  for (let i = 0; i < ciclo.length; i++) noCiclo.add(ciclo[i] + ">" + ciclo[(i + 1) % ciclo.length]);
+  const naArvore = new Set();
+  for (const [u, v] of an.arestas || []) { naArvore.add(u + "-" + v); naArvore.add(v + "-" + u); }
+  const esmaecer = an.tipo === "hamilton" || an.tipo === "agm";
 
   const noCaminho = new Set();
   for (let i = 0; i + 1 < S.caminhoGrafo.length; i++) noCaminho.add(S.caminhoGrafo[i] + ">" + S.caminhoGrafo[i + 1]);
@@ -520,8 +572,17 @@ function desenharGrafo() {
   for (const v of S.grafo.vertices) {
     for (const a of v.adjacencias) {
       if (!pos[v.id] || !pos[a.destino] || noCaminho.has(v.id + ">" + a.destino)) continue;
-      svg.append(a.peso === 0 ? linha(v.id, a.destino, "#E8862A", 2, "seta-p") : linha(v.id, a.destino, "rgba(154,160,176,.35)", 1));
+      if (noCiclo.has(v.id + ">" + a.destino) || naArvore.has(v.id + "-" + a.destino)) continue; // desenhadas por cima
+      if (esmaecer) svg.append(linha(v.id, a.destino, "rgba(154,160,176,.18)", 1));
+      else svg.append(a.peso === 0 ? linha(v.id, a.destino, "#E8862A", 2, "seta-p") : linha(v.id, a.destino, "rgba(154,160,176,.35)", 1));
     }
+  }
+  for (const [u, v] of an.arestas || []) {
+    if (pos[u] && pos[v]) svg.append(linha(u, v, "#2E7D32", 3.5));
+  }
+  for (let i = 0; i < ciclo.length; i++) {
+    const a = ciclo[i], b = ciclo[(i + 1) % ciclo.length];
+    if (pos[a] && pos[b]) svg.append(linha(a, b, "#7B1FA2", 3, "seta-h"));
   }
   for (let i = 0; i + 1 < S.caminhoGrafo.length; i++) {
     if (pos[S.caminhoGrafo[i]] && pos[S.caminhoGrafo[i + 1]]) svg.append(linha(S.caminhoGrafo[i], S.caminhoGrafo[i + 1], "#3355FF", 4, "seta-c"));
@@ -545,17 +606,29 @@ function desenharGrafo() {
     const g = s("g", { class: "no", onclick: () => cliqueVertice(v) },
       s("title", {}, `Vértice ${v.id} · ${v.rotulo}` + (v.cifra ? ` · ${v.cifra} (${v.funcao}) · ${v.descricao}` : "") + ` · ${v.adjacencias.length} transições`),
       forte ? s("circle", { cx: p[0], cy: p[1], r: r + 4, fill: "none", stroke: "#3355FF", "stroke-width": 3 }) : null,
-      s("circle", { cx: p[0], cy: p[1], r, fill: cores[v.funcao] || "#8A8F9C" }),
-      s("text", { x: p[0], y: p[1] + 4, "text-anchor": "middle", "font-size": 11, "font-weight": 700, fill: "#fff" }, v.grauRomano || v.id));
+      impares.has(v.id) ? s("circle", { cx: p[0], cy: p[1], r: r + 4, fill: "none", stroke: "#1F2430", "stroke-width": 2.5 }) : null,
+      s("circle", { cx: p[0], cy: p[1], r, fill: corClasse[v.id] || cores[v.funcao] || "#8A8F9C",
+        opacity: an.tipo === "euler" && !impares.has(v.id) ? 0.45 : 1 }),
+      s("text", { x: p[0], y: p[1] + 4, "text-anchor": "middle", "font-size": 11, "font-weight": 700,
+        fill: corClasse[v.id] === "#FDD835" ? "#1F2430" : "#fff" }, v.grauRomano || v.id));
     svg.append(g);
   }
 
   let ly = 24;
-  for (const [nome, cor] of Object.entries(cores)) {
-    svg.append(s("circle", { cx: 20, cy: ly, r: 7, fill: cor }), s("text", { x: 34, y: ly + 5, "font-size": 14, fill: "#1F2430" }, nome));
+  const itemLegenda = (cor, nome, forma = "circulo") => {
+    svg.append(forma === "linha" ? s("line", { x1: 12, y1: ly, x2: 28, y2: ly, stroke: cor, "stroke-width": 3.5 })
+      : forma === "anel" ? s("circle", { cx: 20, cy: ly, r: 7, fill: "none", stroke: cor, "stroke-width": 2.5 })
+      : s("circle", { cx: 20, cy: ly, r: 7, fill: cor }),
+      s("text", { x: 34, y: ly + 5, "font-size": 14, fill: "#1F2430" }, nome));
     ly += 24;
-  }
-  svg.append(s("line", { x1: 12, y1: ly, x2: 28, y2: ly, stroke: "#E8862A", "stroke-width": 3 }), s("text", { x: 34, y: ly + 5, "font-size": 14, fill: "#1F2430" }, "Aresta de pivô (peso 0)"));
+  };
+  if (an.tipo === "coloracao") an.classes.forEach((c, i) => itemLegenda(PALETA[i % PALETA.length], `Cor ${i + 1} (${c.length} vértices)`));
+  else for (const [nome, cor] of Object.entries(cores)) itemLegenda(cor, nome);
+  if (!esmaecer) itemLegenda("#E8862A", "Aresta de pivô (peso 0)", "linha");
+  if (an.tipo === "euler") itemLegenda("#1F2430", `Grau ímpar (${impares.size} vértices)`, "anel");
+  if (an.tipo === "hamilton" && ciclo.length) itemLegenda("#7B1FA2", `Ciclo hamiltoniano (${ciclo.length} vértices)`, "linha");
+  if (an.tipo === "agm") itemLegenda("#2E7D32", `Árvore mínima (custo ${an.custo})`, "linha");
+  ly -= 24;
   if (S.caminhoGrafo.length) {
     ly += 24;
     svg.append(s("line", { x1: 12, y1: ly, x2: 28, y2: ly, stroke: "#3355FF", "stroke-width": 4 }), s("text", { x: 34, y: ly + 5, "font-size": 14, fill: "#1F2430" }, "Caminho mínimo"));
@@ -568,12 +641,12 @@ function cliqueVertice(v) {
   $("g-rotulo").value = v.rotulo;
   if (S.cliqueOrigem) {
     $("g-origem").value = v.id; $("g-destino").value = "";
-    $("g-d-origem").value = v.id; $("g-d-destino").value = "";
+    $("g-d-origem").value = v.rotulo; $("g-d-destino").value = "";
     S.selecionados = [v.id];
     status(`Vértice ${v.id} (${v.rotulo}) como origem — clique em outro vértice para o destino.`);
   } else {
     $("g-destino").value = v.id;
-    $("g-d-destino").value = v.id;
+    $("g-d-destino").value = v.rotulo;
     S.selecionados.push(v.id);
     status(`Vértice ${v.id} (${v.rotulo}) como destino.`);
   }
@@ -584,6 +657,8 @@ function cliqueVertice(v) {
 document.querySelectorAll("[data-op]").forEach((b) => b.addEventListener("click", () => operacao(b.dataset.op)));
 document.querySelectorAll("[data-sub]").forEach((b) => b.addEventListener("click", () => mostrarSub(b.dataset.sub)));
 $("g-dijkstra").addEventListener("click", dijkstraGrafo);
+document.querySelectorAll("[data-analise]").forEach((b) => b.addEventListener("click", () => analiseGrafo(b.dataset.analise, b)));
+$("g-limpar").addEventListener("click", limparDestaques);
 document.querySelectorAll(".aba").forEach((b) => b.addEventListener("click", () => {
   document.querySelectorAll(".aba").forEach((x) => x.classList.toggle("ativa", x === b));
   $("aba-fluxo").classList.toggle("oculto", b.dataset.aba !== "fluxo");

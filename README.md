@@ -171,14 +171,15 @@ voltam com **200** e `{"ok": false, "mensagem": "..."}`.
 | GET | `/api/acordes` | — | acordes distintos presentes no grafo |
 | GET | `/api/exemplos` | — | shapes de exemplo para o braço |
 | GET | `/api/texto` | `tipo=arquivo` \| `lista` \| `conexidade` | saída das opções g, h e i do menu |
-| GET | `/api/dijkstra` | `origem`, `destino` (IDs) | custo e caminho mínimo entre dois vértices |
+| GET | `/api/dijkstra` | `origem`, `destino` (ID ou rótulo, ex.: `G_I`) | opção k: custo, caminho mínimo e o texto do console |
+| GET | `/api/analise` | `tipo=euler` \| `hamilton` \| `coloracao` \| `agm` | opções l..o: texto do console e os dados destacados no desenho (vértices de grau ímpar, ciclo hamiltoniano, classes de cor, arestas da árvore mínima) |
 | POST | `/api/operacao` | `op=ler` \| `gravar` \| `inserirVertice` \| `inserirAresta` \| `removerVertice` \| `removerAresta` + `id`, `rotulo`, `origem`, `destino`, `peso`, `caminho` | executa as opções a..f do menu |
 
 Exemplo: `curl "http://localhost:8080/api/caminho?raiz=0&tipo=MAIOR&destRaiz=7&destTipo=MAIOR"`
 
 ## Testes automatizados
 
-Os testes ficam em `Musichords/test/` (JUnit 4, sem Maven) e cobrem três camadas (82 testes):
+Os testes ficam em `Musichords/test/` (JUnit 4, sem Maven) e cobrem três camadas (87 testes):
 
 | Classe | O que testa |
 |---|---|
@@ -247,7 +248,7 @@ docker run -p 8080:8080 musichords     # http://localhost:8080
 | 5 | Shapes da progressão escolhida, com o peso de cada transição | RF07 |
 | 6 | Extras: músicas de referência, escalas no braço, campo harmônico | RF05 |
 
-**Grafo de campos harmônicos** — o menu a..i da Parte 1, Dijkstra entre dois vértices e o desenho do grafo
+**Grafo de campos harmônicos** — o menu a..i da Parte 1, as opções k..o da Parte 3 (com o resultado destacado no desenho: grau ímpar, ciclo hamiltoniano em roxo, vértices pintados pelas cores da coloração e árvore mínima em verde), Dijkstra entre dois vértices e o desenho do grafo
 (tonalidades no círculo das quintas, pivôs em laranja; clique nos vértices para preencher origem/destino).
 
 ## Estrutura

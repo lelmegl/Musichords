@@ -45,7 +45,7 @@
     </aside>
   </main>
 
-  <!-- ===================================================== GRAFO (menu a..i) -->
+  <!-- ===================================================== GRAFO (menu a..i e Parte 3: k..o) -->
   <main id="aba-grafo" class="tela-grafo oculto">
     <section class="painel-operacoes">
       <div class="cartao">
@@ -78,11 +78,19 @@
         <button class="botao secundario largo" data-sub="lista">h) Lista de adjacência</button>
         <button class="botao secundario largo" data-sub="conexidade">i) Conexidade (FCONEX) e reduzido</button>
       </div>
-      <div class="cartao">
-        <div class="rotulo-secao">CAMINHO MÍNIMO (DIJKSTRA)</div>
-        <div class="campos"><input id="g-d-origem" placeholder="Origem"><input id="g-d-destino" placeholder="Destino"></div>
+      <div class="cartao cartao-parte3">
+        <div class="rotulo-secao">k) PROGRESSÃO DE MENOR ESFORÇO (DIJKSTRA)</div>
+        <div class="campos"><input id="g-d-origem" placeholder="Origem (ex.: G_I)"><input id="g-d-destino" placeholder="Destino (ex.: C_I)"></div>
         <button id="g-dijkstra" class="botao primario largo">Calcular</button>
-        <div class="texto-suave">Dica: clique em um vértice no desenho para preencher a origem e, depois, em outro para o destino.</div>
+        <div class="texto-suave">Aceita ID ou rótulo. Dica: clique em um vértice no desenho para a origem e, depois, em outro para o destino.</div>
+      </div>
+      <div class="cartao cartao-parte3">
+        <div class="rotulo-secao">CARACTERÍSTICAS DO GRAFO (PARTE 3)</div>
+        <button class="botao secundario largo" data-analise="euler">l) Graus e caminho euleriano</button>
+        <button class="botao secundario largo" data-analise="hamilton">m) Hamilton e Caixeiro Viajante</button>
+        <button class="botao secundario largo" data-analise="coloracao">n) Coloração (Welsh e Powell)</button>
+        <button class="botao secundario largo" data-analise="agm">o) Árvore geradora mínima (Kruskal)</button>
+        <button id="g-limpar" class="botao secundario largo">Limpar destaques do desenho</button>
       </div>
     </section>
     <section class="centro-grafo">
@@ -92,13 +100,21 @@
         <button class="sub-aba" data-sub="lista">h) Adjacência</button>
         <button class="sub-aba" data-sub="arquivo">g) Arquivo</button>
         <button class="sub-aba" data-sub="conexidade">i) Conexidade</button>
-        <button class="sub-aba" data-sub="dijkstra">Dijkstra</button>
+        <button class="sub-aba" data-sub="dijkstra">k) Menor esforço</button>
+        <button class="sub-aba" data-sub="euler">l) Euler</button>
+        <button class="sub-aba" data-sub="hamilton">m) Hamilton</button>
+        <button class="sub-aba" data-sub="coloracao">n) Coloração</button>
+        <button class="sub-aba" data-sub="agm">o) Árvore mínima</button>
       </nav>
       <div id="sub-visual" class="sub-conteudo"><div id="svg-grafo" class="svg-grafo"></div></div>
       <pre id="sub-lista" class="sub-conteudo texto-mono oculto"></pre>
       <pre id="sub-arquivo" class="sub-conteudo texto-mono oculto"></pre>
       <pre id="sub-conexidade" class="sub-conteudo texto-mono quebra oculto"></pre>
       <pre id="sub-dijkstra" class="sub-conteudo texto-mono oculto">Informe origem e destino e clique em Calcular.</pre>
+      <pre id="sub-euler" class="sub-conteudo texto-mono oculto">Clique em l) Graus e caminho euleriano.</pre>
+      <pre id="sub-hamilton" class="sub-conteudo texto-mono quebra oculto">Clique em m) Hamilton e Caixeiro Viajante.</pre>
+      <pre id="sub-coloracao" class="sub-conteudo texto-mono quebra oculto">Clique em n) Coloração (Welsh e Powell).</pre>
+      <pre id="sub-agm" class="sub-conteudo texto-mono oculto">Clique em o) Árvore geradora mínima (Kruskal).</pre>
       <div id="status" class="status"></div>
     </section>
   </main>

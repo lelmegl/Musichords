@@ -38,6 +38,7 @@ import com.sun.net.httpserver.HttpServer;
  * 20/10/2026 | Pedro | criarServidor() para os testes automatizados; status 400 (parâmetro
  *            |       | inválido) e 404 (rota desconhecida) nas respostas da API.
  * 03/11/2026 | Pedro | Deploy na nuvem: usa a variável PORT e escuta em 0.0.0.0 quando ela existe.
+ * 20/11/2026 | Pedro | Parte 3: rota /api/analise (opções l..o) e /api/dijkstra aceitando ID ou rótulo.
  */
 public class Servidor {
 
@@ -216,12 +217,10 @@ public class Servidor {
                 return api.texto(p.getOrDefault("tipo", "")).toString();
             case "operacao":
                 return api.operacao(p).toString();
-            case "dijkstra":
-                try {
-                    return api.dijkstra(inteiro(p, "origem"), inteiro(p, "destino")).toString();
-                } catch (NumberFormatException e) {
-                    return Json.obj().put("ok", false).put("mensagem", "Informe origem e destino numéricos.").toString();
-                }
+            case "dijkstra":                                    // opção k: ID ou rótulo (ex.: G_I)
+                return api.dijkstra(p.get("origem"), p.get("destino")).toString();
+            case "analise":                                     // opções l..o
+                return api.analise(p.getOrDefault("tipo", "")).toString();
             default:
                 return null; // tratar() responde 404
         }

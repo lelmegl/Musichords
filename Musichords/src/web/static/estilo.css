@@ -246,3 +246,7 @@ input:focus { outline: none; border-color: var(--azul); }
 
 /* evita que os cartões sejam "espremidos" dentro das listas com rolagem */
 .lista-rolavel > * { flex-shrink: 0; }
+
+/* Parte 3: cartões das opções k..o */
+.cartao-parte3 { border-left: 3px solid var(--azul); }
+.cartao-parte3 .botao.largo + .botao.largo { margin-top: 6px; }

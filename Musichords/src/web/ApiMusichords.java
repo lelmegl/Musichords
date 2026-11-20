@@ -3,6 +3,7 @@ import java.io.File;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -23,6 +24,9 @@ import java.util.Map;
  * 03/11/2026 | Pedro | Segurança para o deploy: ler/gravar só arquivos .txt da pasta do grafo.txt.
  * 11/11/2026 | Pedro | inserirAresta passa a informar erro quando o Grafo recusa a aresta (ex.: repetida).
  * 18/11/2026 | Guilherme | Correção de erros.
+ * 20/11/2026 | Pedro | Parte 3 na interface: analise() devolve o texto das opções l..o e os dados para
+ *            |       | destacar no desenho (vértices de grau ímpar, ciclo hamiltoniano, classes de cor
+ *            |       | e arestas da árvore mínima); dijkstra() aceita ID ou rótulo e usa a saída da opção k.
  */
 public class ApiMusichords {
 
@@ -272,29 +276,78 @@ public class ApiMusichords {
         }
     }
 
+    /** Opção k: progressão de menor esforço (Dijkstra). Origem e destino por ID ou rótulo (ex.: G_I). */
+    public Json.Obj dijkstra(String origem, String destino) {
+        Integer o = verticePorIdOuRotulo(origem), d = verticePorIdOuRotulo(destino);
+        if (o == null || d == null) return erro("Origem ou destino inexistente: informe um ID ou um rótulo, como G_I.");
+        return dijkstra(o, d);
+    }
+
     public Json.Obj dijkstra(int origem, int destino) {
         if (grafo.getVerticeById(origem) == null || grafo.getVerticeById(destino) == null) {
             return erro("Origem ou destino inexistente.");
         }
         Grafo.ResultadoDijkstra r = grafo.dijkstra(origem);
-        StringBuilder sb = new StringBuilder("Algoritmo de Dijkstra (pesos não negativos)\n");
-        sb.append("Origem: ").append(descrever(origem)).append('\n');
-        sb.append("Destino: ").append(descrever(destino)).append("\n\n");
-        List<Integer> caminho = new ArrayList<>();
-        if (!r.alcanca(destino)) {
-            sb.append("O destino não é alcançável a partir da origem.");
-        } else {
-            caminho = r.caminhoAte(destino);
-            sb.append("Custo mínimo: ").append(r.distancia(destino)).append("\n\nCaminho:\n");
-            for (int i = 0; i < caminho.size(); i++) {
-                if (i > 0) {
-                    sb.append("     │ peso ").append(peso(caminho.get(i - 1), caminho.get(i))).append("\n     ▼\n");
-                }
-                sb.append("  ").append(descrever(caminho.get(i))).append('\n');
-            }
-        }
-        return Json.obj().put("ok", true).put("texto", sb.toString()).put("caminho", caminho)
+        List<Integer> caminho = r.alcanca(destino) ? r.caminhoAte(destino) : new ArrayList<>();
+        String texto = capturar(() -> grafo.mostrarMenorEsforco(origem, destino));
+        return Json.obj().put("ok", true).put("texto", texto).put("caminho", caminho)
                 .put("custo", r.alcanca(destino) ? r.distancia(destino) : -1);
+    }
+
+    private Integer verticePorIdOuRotulo(String entrada) {
+        if (entrada == null || entrada.trim().isEmpty()) return null;
+        String e = entrada.trim();
+        try {
+            int id = Integer.parseInt(e);
+            return grafo.getVerticeById(id) == null ? null : id;
+        } catch (NumberFormatException naoNumero) {
+            Vertice v = grafo.getVerticeByRotulo(e);
+            return v == null ? null : v.getId();
+        }
+    }
+
+    // ================================================================== Parte 3: opções l..o
+
+    /**
+     * Opções l..o do menu: devolve o mesmo texto do console e, para o desenho, os dados de cada análise.
+     *   euler     -> "impares": vértices de grau total ímpar
+     *   hamilton  -> "ciclo": ciclo hamiltoniano (lista de IDs, vazia se não encontrado)
+     *   coloracao -> "classes": vértices de cada cor (ordem não crescente de grau)
+     *   agm       -> "arestas": arestas da árvore geradora mínima, cada uma [u, v, peso]
+     */
+    public Json.Obj analise(String tipo) {
+        if (grafo.getVertices().isEmpty()) {
+            return Json.obj().put("ok", false).put("tipo", tipo).put("texto", "O grafo está vazio. Use a) Ler primeiro.");
+        }
+        Json.Obj r = Json.obj().put("ok", true).put("tipo", tipo);
+        switch (tipo) {
+            case "euler": {                                                              // l)
+                List<Object> impares = Json.lista();
+                for (Vertice v : grafo.getVertices()) if (grafo.grauTotal(v.getId()) % 2 == 1) impares.add(v.getId());
+                return r.put("texto", capturar(grafo::analisarGrausEEuler)).put("impares", impares)
+                        .put("euleriano", grafo.temCaminhoEuleriano());
+            }
+            case "hamilton": {                                                           // m)
+                String texto = capturar(grafo::analisarHamilton);
+                return r.put("texto", texto).put("ciclo", grafo.cicloHamiltoniano());
+            }
+            case "coloracao": {                                                          // n)
+                List<Object> classes = Json.lista();
+                for (List<Integer> c : grafo.coloracaoPorClasse(true)) classes.add(c);
+                return r.put("texto", capturar(grafo::mostrarColoracao)).put("classes", classes);
+            }
+            case "agm": {                                                                // o)
+                List<Object> arestas = Json.lista();
+                int custo = 0;
+                for (int[] a : grafo.kruskal()) {
+                    arestas.add(Arrays.asList(a[0], a[1], a[2]));
+                    custo += a[2];
+                }
+                return r.put("texto", capturar(grafo::mostrarArvoreGeradoraMinima)).put("arestas", arestas).put("custo", custo);
+            }
+            default:
+                return Json.obj().put("ok", false).put("tipo", tipo).put("texto", "Análise desconhecida: " + tipo);
+        }
     }
 
     // ================================================================== conversões
@@ -368,23 +421,10 @@ public class ApiMusichords {
 
     // ================================================================== utilitários
 
-    private String descrever(int id) {
-        Vertice v = grafo.getVerticeById(id);
-        if (v == null) return String.valueOf(id);
-        VerticeMusical vm = busca.musical(id);
-        return "[" + id + " - " + v.getRotulo() + "]" + (vm == null ? "" : "  " + vm.getAcorde().getCifra() + " · " + vm.descricao());
-    }
-
     private int numeroArestas() {
         int total = 0;
         for (Vertice v : grafo.getVertices()) total += v.getAdjacencias().size();
         return total;
-    }
-
-    private int peso(int origem, int destino) {
-        Vertice v = grafo.getVerticeById(origem);
-        if (v != null) for (Aresta a : v.getAdjacencias()) if (a.getDestinoId() == destino) return a.getPeso();
-        return -1;
     }
 
     private static int inteiro(Map<String, String> p, String chave) {

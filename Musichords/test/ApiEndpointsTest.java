@@ -26,6 +26,7 @@ import org.junit.rules.TemporaryFolder;
  * Data       | Autor | Descrição
  * 20/10/2026 | Pedro | Criação dos testes.
  * 18/11/2026 | Guilherme | Correção de erros.
+ * 20/11/2026 | Pedro | Testes da Parte 3 na API: /api/dijkstra por rótulo e /api/analise (opções l..o).
  */
 public class ApiEndpointsTest {
 
@@ -267,6 +268,51 @@ public class ApiEndpointsTest {
     public void dijkstraComVerticeInexistenteOuInvalido() throws Exception {
         assertFalse(getOk("/api/dijkstra?origem=0&destino=999").get("ok").logico());
         assertFalse(getOk("/api/dijkstra?origem=abc&destino=4").get("ok").logico());
+    }
+
+    @Test
+    public void dijkstraAceitaRotuloComoNaOpcaoK() throws Exception {
+        NoJson r = getOk("/api/dijkstra?origem=G_I&destino=C_I");
+        assertTrue(r.get("ok").logico());
+        assertEquals(5, r.get("custo").inteiro());   // G_I -> C_V (pivô, 0) -> C_I (5)
+        assertEquals(3, r.get("caminho").tamanho());
+        assertTrue(r.get("texto").texto().contains("G_I -> C_V -> C_I"));
+        assertFalse(getOk("/api/dijkstra?origem=X_9&destino=C_I").get("ok").logico());
+    }
+
+    // ================================================================== GET /api/analise (opções l..o)
+
+    @Test
+    public void analiseEulerMostraOsVerticesDeGrauImpar() throws Exception {
+        NoJson r = getOk("/api/analise?tipo=euler");
+        assertTrue(r.get("ok").logico());
+        assertEquals(48, r.get("impares").tamanho());
+        assertFalse(r.get("euleriano").logico());
+        assertTrue(r.get("texto").texto().contains("NÃO possui caminho euleriano"));
+    }
+
+    @Test
+    public void analiseHamiltonDevolveOCiclo() throws Exception {
+        NoJson r = getOk("/api/analise?tipo=hamilton");
+        assertEquals(VERTICES_GRAFO, r.get("ciclo").tamanho());
+        assertTrue(r.get("texto").texto().contains("Custo total da rota: 248"));
+    }
+
+    @Test
+    public void analiseColoracaoDevolveQuatroClasses() throws Exception {
+        NoJson r = getOk("/api/analise?tipo=coloracao");
+        assertEquals(4, r.get("classes").tamanho());
+        int total = 0;
+        for (NoJson c : r.get("classes").itens()) total += c.tamanho();
+        assertEquals(VERTICES_GRAFO, total);
+    }
+
+    @Test
+    public void analiseArvoreMinimaTemCusto149() throws Exception {
+        NoJson r = getOk("/api/analise?tipo=agm");
+        assertEquals(VERTICES_GRAFO - 1, r.get("arestas").tamanho());
+        assertEquals(149, r.get("custo").inteiro());
+        assertFalse(getOk("/api/analise?tipo=outra").get("ok").logico());
     }
 
     // ================================================================== POST /api/operacao (opções a..f)
