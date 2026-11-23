@@ -43,6 +43,8 @@ e a **ODS 9 – Indústria, Inovação e Infraestrutura** (ferramenta educaciona
 - **API REST em JSON** documentada, **testes automatizados** no GitHub Actions e **deploy na nuvem** (Docker + Render).
 
 ## Como executar
+Link do projeto na nuvem: https://musichords.onrender.com/
+
 Único requisito: **Java 11 ou mais novo** (qualquer JDK/JRE; o GitHub Codespaces já vem com Java).
 Não há Maven, bibliotecas nem downloads: o projeto já vem com o `Musichords.jar` pronto.
 
@@ -212,6 +214,8 @@ O build roda os testes e gera o `Musichords.jar`; se algum teste falhar, o deplo
 
 Na nuvem o servidor usa a porta da variável `PORT` (definida pelo Render) e aceita conexões externas.
 Por segurança, as opções *a) Ler* e *b) Gravar* só aceitam arquivos `.txt` da pasta do `grafo.txt`.
+
+Link do app na nuvem: https://musichords.onrender.com/
 
 Para reproduzir:
 
